@@ -3,54 +3,36 @@ using namespace std;
 
 #include "board.h"
 #include "creature.h"
-#include "ant.h"
-#include "doodlebug.h"
 
-Board::Board(int newSizeX, int newSizeY, int antCount, int doodleBugCount)
+Board::Board(int newSizeX, int newSizeY, vector<pair<CreatureID, int>>& initialBoard)
     : sizeX(newSizeX), sizeY(newSizeY), turnCount(1)
 {
     int totalSpaces = sizeX * sizeY;
 
-    cells = new Creature*[totalSpaces];
+    cells = new Creature * [totalSpaces];
     for (int i = 0; i < totalSpaces; i++)
     {
         cells[i] = nullptr;
     }
 
     int remainingSpaces = totalSpaces;
-    for (int i = 0; i < antCount; i++)
+    for(int c = 0; c < initialBoard.size(); c++)
     {
-        int space = rand() % remainingSpaces--;
-        int spaceCount = 0;
-        for (int j = 0; j < totalSpaces; j++)
+        for (int i = 0; i < initialBoard[c].second; i++)
         {
-            if (cells[j] == nullptr)
+            int space = rand() % remainingSpaces--;
+            int spaceCount = 0;
+            for (int j = 0; j < totalSpaces; j++)
             {
-                if (++spaceCount == space)
+                if (cells[j] == nullptr)
                 {
-                    int x = j % sizeY;
-                    int y = j / sizeY;
-                    cells[j] = new Ant(x, y, true);
-                    break;
-                }
-            }
-        }
-    }
-
-    for (int i = 0; i < doodleBugCount; i++)
-    {
-        int space = rand() % remainingSpaces--;
-        int spaceCount = 0;
-        for (int j = 0; j < totalSpaces; j++)
-        {
-            if (cells[j] == nullptr)
-            {
-                if (++spaceCount == space)
-                {
-                    int x = j % sizeY;
-                    int y = j / sizeY;
-                    cells[j] = new DoodleBug(x, y, true);
-                    break;
+                    if (++spaceCount == space)
+                    {
+                        int x = j % sizeY;
+                        int y = j / sizeY;
+                        cells[j] = Creature::factory(initialBoard[c].first, x, y);
+                        break;
+                    }
                 }
             }
         }
@@ -91,9 +73,21 @@ void Board::step()
     cleanup();
 }
 
-void Board::setCell(int x, int y, Creature* creature)
+void Board::setCell(CreatureID id, int x, int y)
 {
-    cells[y * sizeX + x] = creature;
+    int cell = y * sizeX + x;
+    if (cells[cell] != nullptr) eraseCell(x, y);
+    cells[cell] = Creature::factory(id, x, y);
+}
+
+void Board::moveCell(int startX, int startY, int endX, int endY)
+{
+    int cellStart = startY * sizeX + startX;
+    int cellEnd = endY * sizeX + endX;
+    if (cells[cellStart] == nullptr) return;
+    if (cells[cellEnd] != nullptr) eraseCell(endX, endY);
+    cells[cellEnd] = cells[cellStart];
+    cells[cellStart] = nullptr;
 }
 
 void Board::eraseCell(int x, int y)
@@ -103,15 +97,17 @@ void Board::eraseCell(int x, int y)
     cells[cell] = nullptr;
 }
 
-void Board::getRandomDir(int startX, int startY, bool findFirst, int& outX, int& outY)
+void Board::getRandomDir(int startX, int startY, int& outX, int& outY, CreatureID searchID, bool ordinal, int distance)
 {
-    bool triedDir[DEGREES_OF_FREEDOM] = { false, false, false, false };
+    bool triedDir[DEGREES_OF_FREEDOM] = { 0 };
 
-    for (int i = 0; i < DEGREES_OF_FREEDOM; i++)
+    int degreesOfFreedom = ordinal ? 4 : 8;
+
+    for (int i = 0; i < degreesOfFreedom; i++)
     {
-        int dir = rand() % (DEGREES_OF_FREEDOM - i);
+        int dir = rand() % (degreesOfFreedom - i);
         int dirCount = 0;
-        for (int j = 0; j < DEGREES_OF_FREEDOM; j++)
+        for (int j = 0; j < degreesOfFreedom; j++)
         {
             if (!triedDir[j])
             {
@@ -128,36 +124,34 @@ void Board::getRandomDir(int startX, int startY, bool findFirst, int& outX, int&
         switch (dir)
         {
         case DIR_UP:
-            tempY--;
+            tempY -= distance;
             break;
         case DIR_RIGHT:
-            tempX++;
+            tempX += distance;
             break;
         case DIR_DOWN:
-            tempY++;
+            tempY += distance;
             break;
         case DIR_LEFT:
-            tempX--;
+            tempX -= distance;
             break;
         }
 
-        if (isEmpty(tempX, tempY))
+        CreatureID id = getCreatureID(tempX, tempY);
+        if (searchID == Creature::emptyID && isEmpty(tempX, tempY)) 
         {
             outX = tempX;
             outY = tempY;
             return;
         }
-        else
+        else if (searchID == id || (searchID == Creature::anyID && id != Creature::emptyID && id != -3))
         {
-            if (findFirst)
-            {
-                outX = -1;
-                outY = -1;
-                return;
-            }
-
-            triedDir[dir] = true;
+            outX = tempX;
+            outY = tempY;
+            return;
         }
+
+        triedDir[dir] = true;
     }
 
     outX = -1;
@@ -186,10 +180,10 @@ CreatureID Board::getCreatureID(int x, int y)
 {
     if (x < 0 || x >= sizeX || y < 0 || y >= sizeY)
     {
-        return -1;
+        return -3;
     }
 
-    if (isEmpty(x, y)) return -1;
+    if (isEmpty(x, y)) return Creature::emptyID;
     else
     {
         int cell = y * sizeX + x;

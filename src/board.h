@@ -1,12 +1,13 @@
 #pragma once
 
 #include <vector>
+#include <utility>
 
 class Creature;
 typedef int CreatureID;
+const CreatureID EMPTY_ID = -1;
 
-const int DEGREES_OF_FREEDOM = 4;
-
+const int DEGREES_OF_FREEDOM = 8;
 const int DIR_UP = 0;
 const int DIR_RIGHT = 1;
 const int DIR_DOWN = 2;
@@ -25,14 +26,15 @@ private:
     void cleanup();
 
 public:
-    Board(int newSizeX, int newSizeY, int antCount, int doodleBugCount);
+    Board(int newSizeX, int newSizeY, std::vector<std::pair<CreatureID, int>>& initialBoard);
     ~Board();
 
     void step();
     void print();
     bool isEmpty(int x, int y);
     CreatureID getCreatureID(int x, int y);
-    void setCell(int x, int y, Creature* creature);
+    void getRandomDir(int startX, int startY, int& outX, int& outY, CreatureID searchID = EMPTY_ID, bool ordinal = true, int distance = 1);
+    void moveCell(int startX, int startY, int endX, int endY);
+    void setCell(CreatureID id, int x, int y);
     void eraseCell(int x, int y);
-    void getRandomDir(int startX, int startY, bool findFirst, int& outX, int& outY);
 };

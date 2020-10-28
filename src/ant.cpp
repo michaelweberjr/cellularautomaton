@@ -10,12 +10,12 @@ void Ant::step(Board& board)
     if (++turnsToBreeding == TURNS_TO_BREED)
     {
         int tempX, tempY;
-        board.getRandomDir(getX(), getY(), false, tempX, tempY);
+        board.getRandomDir(getX(), getY(), tempX, tempY);
 
         if (tempX != -1)
         {
             Ant* newAnt = new Ant(tempX, tempY);
-            board.setCell(tempX, tempY, newAnt);
+            board.setCell(id, tempX, tempY);
         }
 
         turnsToBreeding = 0;

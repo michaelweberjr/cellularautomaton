@@ -7,11 +7,14 @@ using namespace std;
 #include "board.h"
 #include "creature.h"
 #include "ant.h"
+#include "doodlebug.h"
+#include "mantis.h"
 
 int main()
 {
-    srand(time(0));
-    Board board = Board(20, 20, 100, 5);
+    srand((unsigned int)time(0));
+    vector<pair<CreatureID, int>> initialBoard = { make_pair(Ant::getAntID(), 100), make_pair(Mantis::getMantisID(), 2), make_pair(Doodlebug::getDoodlebugID(), 5) };
+    Board board = Board(20, 20, initialBoard);
 
     Creature::printRegistry();
     cout << endl;

@@ -49,6 +49,9 @@ protected:
     static CreatureID registerCreatureType(std::string name, unsigned int priority, FactoryPr);
 
 public:
+    static const CreatureID emptyID = -1;
+    static const CreatureID anyID = -2;
+
     Creature(CreatureID id, int startX, int startY, bool needsToMove = false) : typeID(id), x(startX), y(startY), needsToMove(needsToMove) {}
     virtual ~Creature() { }
 
@@ -65,6 +68,7 @@ public:
 
     static void printRegistry();
     static CreaturePriority*& getPriorityList();
+    static Creature* factory(CreatureID id, int x, int y);
 };
 
 class CreaturePriority

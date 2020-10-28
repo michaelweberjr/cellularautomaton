@@ -19,7 +19,7 @@ CreatureID Creature::registerCreatureType(std::string name, unsigned int priorit
 {
     RegistryList& registry = getRegistry();
     registry.emplace_back(std::make_pair(name, pre));
-    CreatureID id = registry.size() - 1;
+    CreatureID id = (CreatureID)registry.size() - 1;
     addPriority(id, priority);
     return id;
 }
@@ -65,18 +65,25 @@ void Creature::addPriority(CreatureID id, unsigned int priority)
     }
 }
 
+Creature* Creature::factory(CreatureID id, int x, int y)
+{
+    auto registry = getRegistry();
+    if(registry.size() <= id)
+        throw new std::string("Cannot find creautre of type id: ");
+    return registry[id].second(x, y);
+}
+
 void Creature::step(Board& board)
 {
     needsToMove = false;
 
     int tempX, tempY;
-    board.getRandomDir(x, y, true, tempX, tempY);
+    board.getRandomDir(x, y, tempX, tempY);
 
     if (tempX != -1)
     {
         //std::cout << "Basic move[" << getID() << "]: (" << getX() << ", " << getY() << ") to (" << tempX << ", " << tempY << ")" << std::endl;
-        board.setCell(tempX, tempY, this);
-        board.setCell(x, y, nullptr);
+        board.moveCell(x, y, tempX, tempY);
         x = tempX;
         y = tempY;
     }
