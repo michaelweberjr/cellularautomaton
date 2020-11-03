@@ -5,7 +5,7 @@ using namespace std;
 #include "creature.h"
 
 Board::Board(int newSizeX, int newSizeY, vector<pair<CreatureID, int>>& initialBoard)
-    : sizeX(newSizeX), sizeY(newSizeY), turnCount(1)
+    : sizeX(newSizeX), sizeY(newSizeY), turnCount(0)
 {
     int totalSpaces = sizeX * sizeY;
 
@@ -51,10 +51,13 @@ void Board::step()
         {
             if (cells[i] != nullptr && cells[i]->status())
             {
-                for (int j = 0; j < priority->list.size(); j++)
+                for (int j = 1; j <= Creature::getRegistry().size(); j++)
                 {
-                    if(priority->list[j] == cells[i]->getID())
+                    if ((priority->ids & Creature::indexToID(j)) == cells[i]->getID())
+                    {
                         cells[i]->step(*this);
+                        break;
+                    }
                 }
             }
         }
@@ -97,8 +100,10 @@ void Board::eraseCell(int x, int y)
     cells[cell] = nullptr;
 }
 
-void Board::getRandomDir(int startX, int startY, int& outX, int& outY, CreatureID searchID, bool ordinal, int distance)
+void Board::getRandomDir(int startX, int startY, int& outX, int& outY, CreatureID searchIDs, bool ordinal, int distance)
 {
+    static_assert(Creature::emptyID == EMPTY_ID, "You forgot to make sure the empty ids equal each other");
+
     bool triedDir[DEGREES_OF_FREEDOM] = { 0 };
 
     int degreesOfFreedom = ordinal ? 4 : 8;
@@ -135,16 +140,32 @@ void Board::getRandomDir(int startX, int startY, int& outX, int& outY, CreatureI
         case DIR_LEFT:
             tempX -= distance;
             break;
+        case DIR_UPRIGHT:
+            tempY -= distance;
+            tempX += distance;
+            break;
+        case DIR_RIGHTDOWN:
+            tempY += distance;
+            tempX += distance;
+            break;
+        case DIR_DOWNLEFT:
+            tempY += distance;
+            tempX -= distance;
+            break;
+        case DIR_LEFTUP:
+            tempY -= distance;
+            tempX -= distance;
+            break;
         }
 
         CreatureID id = getCreatureID(tempX, tempY);
-        if (searchID == Creature::emptyID && isEmpty(tempX, tempY)) 
+        if (searchIDs == Creature::emptyID && isEmpty(tempX, tempY)) 
         {
             outX = tempX;
             outY = tempY;
             return;
         }
-        else if (searchID == id || (searchID == Creature::anyID && id != Creature::emptyID && id != -3))
+        else if ((searchIDs & id) == id || (searchIDs == Creature::anyID && ((Creature::emptyID | Creature::errorID) & id) == 0))
         {
             outX = tempX;
             outY = tempY;
@@ -180,7 +201,7 @@ CreatureID Board::getCreatureID(int x, int y)
 {
     if (x < 0 || x >= sizeX || y < 0 || y >= sizeY)
     {
-        return -3;
+        return Creature::errorID;
     }
 
     if (isEmpty(x, y)) return Creature::emptyID;

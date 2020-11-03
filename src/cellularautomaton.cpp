@@ -21,12 +21,11 @@ int main()
 
     while (true)
     {
+        board.step();
         board.print();
 
         cout << "Press enter to go to the next turn or 'Q' to quit..." << endl;
         char input = cin.get();
         if (input == 'q' || input == 'Q') break;
-
-        board.step();
     }
 }

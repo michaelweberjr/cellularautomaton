@@ -16,6 +16,6 @@ public:
 	Mantis(int startX, int startY, bool needsToMove = false) : Creature(id, startX, startY, needsToMove), turnsToBreeding(0), turnsToStarving(0) {}
 
 	virtual void step(Board& board);
-	virtual char toChar() const { return 'G'; }
+	virtual char toChar() const { return 'M'; }
 };
 

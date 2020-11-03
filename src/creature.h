@@ -8,7 +8,7 @@
 class Board;
 class CreaturePriority;
 
-typedef int CreatureID;
+typedef unsigned int CreatureID;
 
 #define CREATURE_REGISTER(CREATURE_CLA, STR_NAME, PRIORITY, CREATURE_PR)  \
     private:    \
@@ -28,7 +28,6 @@ typedef int CreatureID;
     CreatureID CREATURE_CLA::id = -1;  \
     CREATURE_CLA::constructor CREATURE_CLA::cons = CREATURE_CLA::constructor() \
 
-
 class Creature
 {
 protected:
@@ -41,7 +40,6 @@ private:
     bool needsToMove;
     CreatureID typeID;
 
-    static RegistryList& getRegistry();
     static void addPriority(CreatureID id, unsigned int priority);
 
 protected:
@@ -49,14 +47,15 @@ protected:
     static CreatureID registerCreatureType(std::string name, unsigned int priority, FactoryPr);
 
 public:
-    static const CreatureID emptyID = -1;
-    static const CreatureID anyID = -2;
+    static const CreatureID emptyID = 1 << 31;
+    static const CreatureID anyID = 1 << 30;
+    static const CreatureID errorID = 1 << 29;
 
     Creature(CreatureID id, int startX, int startY, bool needsToMove = false) : typeID(id), x(startX), y(startY), needsToMove(needsToMove) {}
     virtual ~Creature() { }
 
-    int getX() const { return x; }
-    int getY() const { return y; }
+    inline int getX() const { return x; }
+    inline int getY() const { return y; }
     void setX(int newX) { x = newX; }
     void setY(int newY) { y = newY; }
     bool status() const { return needsToMove; }
@@ -66,9 +65,11 @@ public:
     virtual void step(Board& board);
     virtual char toChar() const = 0;
 
+    static RegistryList& getRegistry();
     static void printRegistry();
     static CreaturePriority*& getPriorityList();
     static Creature* factory(CreatureID id, int x, int y);
+    static CreatureID indexToID(size_t ind) { return (1 << (ind - 1)); }
 };
 
 class CreaturePriority
@@ -76,7 +77,7 @@ class CreaturePriority
 public:
     CreaturePriority* next;
     unsigned int priority;
-    std::vector<CreatureID> list;
+    unsigned int ids;
 
-    CreaturePriority(unsigned int priority, CreatureID id) : next(nullptr), priority(priority), list({id}) {}
+    CreaturePriority(unsigned int priority, CreatureID id) : next(nullptr), priority(priority), ids(id) {}
 };

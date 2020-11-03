@@ -18,8 +18,14 @@ CreaturePriority*& Creature::getPriorityList()
 CreatureID Creature::registerCreatureType(std::string name, unsigned int priority, FactoryPr pre)
 {
     RegistryList& registry = getRegistry();
+    if (registry.size() == 28)
+    {
+        std::cout << "Exceeded creature registry size of: 28" << std::endl;
+        exit(2);
+    }
+
     registry.emplace_back(std::make_pair(name, pre));
-    CreatureID id = (CreatureID)registry.size() - 1;
+    CreatureID id = (CreatureID)(1 << (registry.size()-1));
     addPriority(id, priority);
     return id;
 }
@@ -44,7 +50,7 @@ void Creature::addPriority(CreatureID id, unsigned int priority)
         {
             if (curr->priority == priority)
             {
-                curr->list.push_back(id);
+                curr->ids |= id;
                 break;
             }
             else if (curr->next == nullptr)
@@ -68,9 +74,15 @@ void Creature::addPriority(CreatureID id, unsigned int priority)
 Creature* Creature::factory(CreatureID id, int x, int y)
 {
     auto registry = getRegistry();
-    if(registry.size() <= id)
+    int ind = -1;
+    while (id > 0)
+    {
+        id >>= 1;
+        ind++;
+    }
+    if(registry.size() <= ind)
         throw new std::string("Cannot find creautre of type id: ");
-    return registry[id].second(x, y);
+    return registry[ind].second(x, y);
 }
 
 void Creature::step(Board& board)
@@ -94,16 +106,18 @@ void Creature::printRegistry()
 {
     auto registry = getRegistry();
     cout << "Registry size: " << registry.size() << endl;
-    for (int i = 0; i < registry.size(); i++)
+    for (int i = 1; i <= registry.size(); i++)
     {
-        cout << "ID[" << i << "]: " << registry[i].first << endl;
+        cout << "ID[" << indexToID(i) << "]: " << registry[i-1].first << endl;
     }
     cout << "Priority List: " << endl;
     auto list = getPriorityList();
     while (list != nullptr)
     {
         cout << list->priority << ": ";
-        for (auto i : list->list) cout << i << " ";
+        for (int i = 1; i <= registry.size(); i++) 
+            if((list->ids & indexToID(i)) == indexToID(i))
+                cout << indexToID(i) << " ";
         cout << endl;
         list = list->next;
     }

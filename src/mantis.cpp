@@ -1,13 +1,16 @@
 #include "mantis.h"
 #include "board.h"
 #include "ant.h"
-#include <iostream>
+
 CREATURE_STATIC_DATA(Mantis);
 
 void Mantis::step(Board& board)
 {
-    int tempX, tempY;
-    board.getRandomDir(getX(), getY(), tempX, tempY, Ant::getAntID(), true, 2);
+    int tempX = 0, tempY = 0;
+
+    int dir = 4;
+    while(dir > 1 && tempX != -1)
+        board.getRandomDir(getX(), getY(), tempX, tempY, Ant::getAntID(), false, dir--);
 
     if (tempX != -1)
     {
